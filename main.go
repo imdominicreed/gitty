@@ -33,7 +33,7 @@ func rundebug() {
   repo, err := git.NewRepo(".")
   CheckIfErr(err)
   
-  repo.LoadTree()
+  repo.LoadBranches()
 }
 
 

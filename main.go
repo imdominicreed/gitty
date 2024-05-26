@@ -10,7 +10,7 @@ import (
   
 )
 
-const debug = true
+const debug = true 
 
 func main() {
   if debug {
@@ -33,7 +33,10 @@ func rundebug() {
   repo, err := git.NewRepo(".")
   CheckIfErr(err)
   
-  repo.LoadBranches()
+  branches, err := repo.LoadBranches()
+  CheckIfErr(err)
+  graph := repo.BuildGraph(branches)
+  fmt.Println(graph.String())
 }
 
 

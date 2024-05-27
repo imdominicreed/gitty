@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"gitty/pkg/git"
 
 	"github.com/charmbracelet/bubbles/viewport"
@@ -14,13 +13,8 @@ type GitModel struct {
 
 
 func NewModel(repo *git.Repo) (*GitModel, error) {
-  vp := viewport.New(200, 20)
+  vp := viewport.New(1000, 300)
 
-
-  var test string
-  for i := 0; i < 1000; i++ {
-    test += fmt.Sprintf("%v ", i)
-  }
 
   t := &TreeModel{vp: vp, repo: repo}
   t.buildTree()
@@ -47,7 +41,7 @@ func (m *GitModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
         default:
           var cmd tea.Cmd
-          m.ta, cmd = m.ta.Update(msg)
+          _, cmd = m.ta.Update(msg)
           return m, cmd
     }
 
@@ -58,7 +52,7 @@ func (m *GitModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 
 func (m *GitModel) View() string {
-  return m.ta.View() 
+  return m.ta.View()
 }
 
 

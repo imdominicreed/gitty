@@ -2,45 +2,30 @@ package model
 
 import (
 	"fmt"
+	"gitty/pkg/git"
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/glamour"
-	"github.com/charmbracelet/lipgloss"
 )
 
 type GitModel struct {
-  viewport viewport.Model
+  ta *TreeModel 
 }
 
 
-func NewModel() (*GitModel, error) {
-  vp := viewport.New(78, 20)
+func NewModel(repo *git.Repo) (*GitModel, error) {
+  vp := viewport.New(200, 20)
 
-  vp.Style = lipgloss.NewStyle().
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("62")).
-		PaddingRight(2)
 
-  renderer, err := glamour.NewTermRenderer(
-		glamour.WithAutoStyle(),
-		glamour.WithWordWrap(78),
-	)
-	if err != nil {
-		return nil, err
-	}
   var test string
   for i := 0; i < 1000; i++ {
-    test += fmt.Sprintf("%v\n", i)
-  }
-  str, err := renderer.Render(test)
-  if err != nil {
-    return nil, err
+    test += fmt.Sprintf("%v ", i)
   }
 
-  vp.SetContent(str)
+  t := &TreeModel{vp: vp, repo: repo}
+  t.buildTree()
 
-  return &GitModel{viewport: vp}, nil
+  return &GitModel{ta:t}, nil
 }
 
 func (m *GitModel) Init() tea.Cmd {
@@ -58,12 +43,12 @@ func (m *GitModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
         // These keys should exit the program.
         case "ctrl+c", "q":
             return m, tea.Quit
+        }
 
         default:
           var cmd tea.Cmd
-          m.viewport, cmd = m.viewport.Update(msg)
+          m.ta, cmd = m.ta.Update(msg)
           return m, cmd
-        }
     }
 
     // Return the updated model to the Bubble Tea runtime for processing.
@@ -73,7 +58,7 @@ func (m *GitModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 
 func (m *GitModel) View() string {
-  return m.viewport.View() 
+  return m.ta.View() 
 }
 
 

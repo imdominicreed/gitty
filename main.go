@@ -7,38 +7,33 @@ import (
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
-  
 )
 
-const debug = true
+const debug = false 
 
 func main() {
-  if debug {
-    rundebug()
-    return
-  }
-  m, err := model.NewModel()
-  if err != nil {
-    fmt.Printf("Error running model: %s", err.Error())
-    os.Exit(1)
-  }
-  p := tea.NewProgram(m, tea.WithAltScreen())
-  if _, err := p.Run(); err != nil {
-    fmt.Printf("Error running model: %s", err.Error())
-    os.Exit(1)
-  }
+	if debug {
+		rundebug()
+		return
+	}
+	repo, err := git.NewRepo(".")
+	m, err := model.NewModel(repo)
+	if err != nil {
+		fmt.Printf("Error running model: %s", err.Error())
+		os.Exit(1)
+	}
+	p := tea.NewProgram(m, tea.WithAltScreen())
+	if _, err := p.Run(); err != nil {
+		fmt.Printf("Error running model: %s", err.Error())
+		os.Exit(1)
+	}
 }
 
 func rundebug() {
-  repo, err := git.NewRepo(".")
-  CheckIfErr(err)
-  
-  repo.LoadTree()
 }
 
-
 func CheckIfErr(err error) {
-  if err != nil {
-    panic(err)
-  }
+	if err != nil {
+		panic(err)
+	}
 }

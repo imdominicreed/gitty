@@ -1,18 +1,24 @@
 package model
 
 import (
-	"fmt"
 	"gitty/pkg/git"
 	"sort"
+	"strings"
 
+	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/exp/maps"
 )
-const DefaultCanvasWidth = 100
+const DefaultCanvasWidth = 200
 const NodeConnectorUp = '│'
 const NodeConnecterHorizontal = '─'
 const NodeConnectorBranch = '╯'
 const Node = 'o'
 const NodeConnecterHorizontalBranch = '├'
+const Head = '@'
+
+var HashColor = lipgloss.NewStyle().Foreground(lipgloss.Color("11"))
+var BranchColor = lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
+var HeadColor = lipgloss.NewStyle().Foreground(lipgloss.Color("5"))
 
 type GraphDrawer struct {
   *git.LogGraph
@@ -27,13 +33,17 @@ func (g *GraphDrawer) String() string {
   g.canvas = canvas
   rootCommit := g.LogGraph.RootCommits[0]
   g.nextLine()
-  g.addLine(0, 0)
+  g.addLine(0, -1)
+  g.addLine(1, -1)
   g.drawCommit(rootCommit, 0) 
+  g.nextLine()
   g.nextLine()
   
   g.buildCanvas(g.LogGraph.RootCommits[0], 0)
-  fmt.Println(string(g.canvas))
-  return string(canvas)
+
+  s := string(canvas[len(canvas)- (g.Width * (g.ptr-1)):])
+
+  return s
 }
 
 func (g *GraphDrawer) buildCanvas(commit *git.GraphCommit, indent int) {
@@ -69,8 +79,8 @@ func (g *GraphDrawer) buildMainBranch(commit *git.GraphCommit, indent int) {
 
   g.Write(NodeConnectorUp,0, indent)
 
-  g.nextLine()
   g.drawCommit(commit, indent)
+  g.nextLine()
   g.nextLine()
 }
 func (g *GraphDrawer) buildBranch(commit *git.GraphCommit, indent int) {
@@ -81,22 +91,44 @@ func (g *GraphDrawer) buildBranch(commit *git.GraphCommit, indent int) {
   g.Write(NodeConnecterHorizontal,0, indent+1)
   g.Write(NodeConnectorBranch,0, indent+2)
   
-  g.nextLine()
   g.drawCommit(commit, indent+2)
+  g.nextLine()
   g.nextLine()
 }
 
 func (g *GraphDrawer) Write(letter rune, i, j int) {
-  g.canvas[len(g.canvas) - ((g.ptr + i)*g.Width) + j - 1] = letter 
+  g.canvas[len(g.canvas) - ((g.ptr + i)*g.Width) + j ] = letter 
 }
 
 func (g *GraphDrawer) drawCommit(commit *git.GraphCommit, indent int) {
-  g.Write(Node, 0, indent)
-  ptr := indent + 2
-  for _, letter := range commit.Hash.String() {
-    g.Write(letter,0, ptr)
-    ptr++
+  node := Node  
+  if commit.Head {
+    node = Head
   }
+  g.Write(node, 1, indent)
+  indent += 2
+  ptr := g.WriteString(HashColor.Render(commit.Hash.String()[:9]) + " ", 1, indent)
+  ptr = g.WriteString(commit.Author.Name + " ", 1, ptr)
+  for _, b := range commit.BranchTips {
+    ptr = g.WriteString(BranchColor.Render(b.Reference.Name().Short()) + " ", 1, ptr)
+  }
+
+  titleEnd:= strings.Index(commit.Message, "\n")
+  title := commit.Message[:titleEnd]
+  if commit.Head {
+    title = HeadColor.Render(title)
+  }
+  g.WriteString(title, 0, indent)
+
+}
+
+func (g *GraphDrawer) WriteString(s string, line, indent int) int {
+  ptr := indent
+   for _, letter := range s {
+     g.Write(letter, line, ptr)
+     ptr += 1
+  }
+  return ptr
 }
 
 func (g *GraphDrawer) addLine(line, indent int) {

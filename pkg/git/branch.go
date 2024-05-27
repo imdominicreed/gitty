@@ -46,6 +46,7 @@ type GraphCommit struct {
   Children map[string]*GraphCommit
   ParentCommit  *GraphCommit
   Length int
+  Head bool
 }
 
 type LogGraph struct {
@@ -82,7 +83,10 @@ func (r *Repo) BuildGraph(branches []Branch) (*LogGraph){
     }
   }
 
-  
+  head, err := r.Head()
+  if err == nil {
+    graph.Commits[head.Hash().String()].Head = true
+  }
   return &graph
 }
  

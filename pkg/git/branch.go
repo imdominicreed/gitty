@@ -63,8 +63,10 @@ func (r *Repo) BuildGraph(branches []Branch) (*LogGraph){
     commit.Length = max(commit.Length, 0)
     length := 1
 
-    parentCommit, err := commit.Parent(0)
-    for err == nil {
+    parentCommit := r.GetOldestParent(commit.Commit)
+    for parentCommit != nil {
+      // fmt.Printf("%s %s\n", parentCommit.Hash.String(), commit.Hash.String())
+      // time.Sleep(5 * time.Second)
       var pCommit *GraphCommit
       pCommit, _ = graph.getOrCreateCommit(parentCommit)
       
@@ -73,7 +75,7 @@ func (r *Repo) BuildGraph(branches []Branch) (*LogGraph){
 
       commit.AddParent(pCommit)
 
-      parentCommit, err = pCommit.Parent(0)
+      parentCommit = r.GetOldestParent(pCommit.Commit)
       commit = pCommit
     } 
   }
@@ -88,6 +90,24 @@ func (r *Repo) BuildGraph(branches []Branch) (*LogGraph){
     graph.Commits[head.Hash().String()].Head = true
   }
   return &graph
+}
+
+
+func (r *Repo) GetOldestParent(c *object.Commit) (*object.Commit) {
+  var parent *object.Commit
+  c.Parents().ForEach(
+    func(p *object.Commit) error {
+      if parent == nil {
+        parent = p
+        return nil
+      }
+      if parent.Author.When.Before(p.Author.When) {
+        parent = p
+      }
+      return nil
+    },
+  )
+  return parent
 }
  
 func (l *LogGraph) getOrCreateCommit(commit *object.Commit) (*GraphCommit, bool) {

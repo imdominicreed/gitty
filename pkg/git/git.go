@@ -7,15 +7,14 @@ import (
 const DefaultMain = "mainmainRef"
 
 type Repo struct {
-  *git.Repository   
+	*git.Repository
 }
 
-
 func NewRepo(path string) (*Repo, error) {
-  r, err := git.PlainOpen(path)
-  if err != nil {
-    return nil, err
-  }
-  
-  return &Repo{Repository: r}, nil
+	r, err := git.PlainOpen(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Repo{Repository: r}, nil
 }

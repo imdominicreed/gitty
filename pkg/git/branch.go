@@ -44,7 +44,7 @@ type GraphCommit struct {
   *object.Commit
   BranchTips []*Branch
   Children map[string]*GraphCommit
-  ParentCommit  *GraphCommit
+  ParentCommits []*GraphCommit
   Length int
   Head bool
 }
@@ -61,21 +61,8 @@ func (r *Repo) BuildGraph(branches []Branch) (*LogGraph){
     commit.BranchTips = append(commit.BranchTips, &b)
 
     commit.Length = max(commit.Length, 0)
-    length := 1
 
-    parentCommit, err := commit.Parent(0)
-    for err == nil {
-      var pCommit *GraphCommit
-      pCommit, _ = graph.getOrCreateCommit(parentCommit)
-      
-      pCommit.Length = max(pCommit.Length, length)
-      length++
-
-      commit.AddParent(pCommit)
-
-      parentCommit, err = pCommit.Parent(0)
-      commit = pCommit
-    } 
+    graph.build(commit)
   }
   for _, commit := range graph.Commits {
     if commit.NumParents() == 0 {
@@ -90,6 +77,20 @@ func (r *Repo) BuildGraph(branches []Branch) (*LogGraph){
   return &graph
 }
  
+func (l *LogGraph) build(commit *GraphCommit) {
+      commit.Parents().ForEach(
+        func(parentGitCommit *object.Commit) error {
+          parent, _ := l.getOrCreateCommit(parentGitCommit)
+          
+          parent.Length = max(parent.Length, commit.Length + 1)
+          commit.AddParent(parent)
+
+          l.build(commit)
+          return nil
+        },
+      )
+}
+
 func (l *LogGraph) getOrCreateCommit(commit *object.Commit) (*GraphCommit, bool) {
   graphCommit, ok := l.Commits[commit.Hash.String()]
   if !ok { 
@@ -101,7 +102,7 @@ func (l *LogGraph) getOrCreateCommit(commit *object.Commit) (*GraphCommit, bool)
 }
 
 func (g *GraphCommit) AddParent(p *GraphCommit) {
-  g.ParentCommit = p 
+  g.ParentCommits = append(g.ParentCommits, p)
   p.Children[g.Hash.String()] = g
 }
 
